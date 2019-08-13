@@ -1,8 +1,8 @@
 // ==UserScript==
 // @name         KrunkCheat
 // @namespace    https://discord.gg/BeyH5Us
-// @version      1.5.3
-// @description  Krunker.io Cheat - ESP, Aimbot, Spinbot, and Bhop
+// @version      1.1
+// @description  Krunker.io Cheat - ESP, Aimbot, Spinbot, Bhop, and All Skins
 // @author       Lemons
 // @match        *://krunker.io/*
 // @run-at       document-start
@@ -26,7 +26,7 @@ class Krunker {
 
     static addGUI() {
 
-        let htmlToInject = `
+        let hackMenu = `
         <style>
         .label {
             display: inline;
@@ -103,7 +103,7 @@ class Krunker {
         <b style="color: #FFFFFF;">ESP (K): </b> <span class="hack_esp label pull-right" style="border-radius: 1px;"></span>
         `;
 
-        $('body').append(htmlToInject);
+        $('body').append(hackMenu);
         $('.hackMenu').draggable({ containment: "#gameUI", scroll: false });
 
         document.querySelector('.hack_spinbot').innerText = localStorage.spinbot ? 'ON' : 'OFF';
@@ -192,7 +192,9 @@ class Krunker {
         code = code.replace(/this\.procInputs=function\(\w+,\w+,\w+\)\{/g, `
             $&
 
-            let aimBot = document.querySelector('.hack_aimbot').innerText === 'ON';
+            if (!!window.spinTicks && this.lastSpin && Date.now() - this.lastSpin > 750) {
+                window.spinTicks = 0;
+            }
 
             let targets = game.players.list.filter(player => {
                 if (player.team && player.team === this.team) return;
@@ -208,32 +210,27 @@ class Krunker {
                 return d1 - d2;
             });
 
-            if (!!window.spinTicks && this.lastSpin && Date.now() - this.lastSpin > 750) {
-                window.spinTicks = 0;
-            }
+            if (this.active && localStorage.aimbot && nearestTargets.length > 0) {
 
-            if (this.active && aimBot && nearestTargets.length > 0) {
                 let target = nearestTargets.shift();
-                let spinBot = document.querySelector('.hack_spinbot').innerText === 'ON';
-                let distance = Math.hypot(this.x - target.x, this.y - target.y, this.z - target.z);
 
-                let yPos = target.y + target.height - target.headScale - target.crouchVal * (target.height / 4) - (this.recoilAnimY * 0.3) * 25;
+                let yPos = target.y2 + target.height - (target.headScale * 2) - (target.crouchVal * 3) - this.recoilAnimY * 22.5 - 1.5;
 
-                let xPos = target.x - this.recoilX;
-                let zPos = target.z - this.recoilZ;
+                let xPos = target.x2;
+                let zPos = target.z2;
 
-                if (!spinBot || window.spinTicks > 4) {
+                if (!localStorage.spinbot || window.spinTicks > 6) {
                     controller.camLookAt(xPos, yPos, zPos);
                     controller.mouseDownR = 1;
 
                     if (this.aimVal < 0.1) {
                         controller.mouseDownL = +!controller.mouseDownL;
                     }
-                } else if (spinBot) {
+                } else if (localStorage.spinbot) {
                     window.spinTicks++;
 
-                    controller.object.rotation.y += 5;
-                    controller.xDr += 5;
+                    controller.object.rotation.y += Math.PI / 2;
+                    controller.xDr += Math.PI / 2;
 
                     this.lastSpin = Date.now();
                     window.spinLocked = true;
@@ -242,9 +239,9 @@ class Krunker {
                 controller.target = null;
                 controller.mouseDownL = 0;
                 controller.mouseDownR = 0;
-            } else {
-                window.spinTicks = 0;
+            } else if (window.spinTicks > 0 || window.spinLocked) {
                 window.spinLocked = false;
+                window.spinTicks = 0;
             }
         `);
 
@@ -305,20 +302,20 @@ class Krunker {
 (async function () {
     if (window.location.pathname !== '/') return;
 
-    const html = await Krunker.get('https://krunker.io');
+    const html = await Krunker.get(document.location.href);
 
     let errMessage = 'Join our discord for updated script - discord.gg/BeyH5Us';
 
     try {
+        var hackVersion = '1.5.3'; // Changing this can lead to a hacker flagged account);
         window.version = html.match(/v[0-9.]{2,}/).shift().slice(1);
-        if (window.version !== '1.5.3') return alert(errMessage);
-        // Modifying anything can lead to a hacker flagged account
+        if (window.version !== hackVersion) return alert(errMessage);
     } catch (err) {
         return alert(errMessage);
     }
 
     const build = html.match(/(?<=build=)[^"]+/)[0];
-    const gameURL = `https://krunker.io/js/game.${build}.js?build=${build}`;
+    const gameURL = `/js/game.${build}.js?build=${build}`;
 
     const code = await Krunker.get(gameURL);
 
