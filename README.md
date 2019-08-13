@@ -1,2 +1,2 @@
 # KrunkCheat
-Krunker.io Cheat - ESP, Aimbot, Spinbot, and Bhop
+Krunker.io Cheat - ESP, Aimbot, Spinbot, Bhop, and All Skins
